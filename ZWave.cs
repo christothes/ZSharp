@@ -3,6 +3,7 @@
  * HiØ 2011
  * H11D13 / iAutomation@Home
  * Author: thomrand
+ * Branch test: christothes
  */
 
 using System;
