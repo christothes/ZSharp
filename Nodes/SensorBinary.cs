@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace iAutomationAtHome.ZSharp.Nodes
+namespace ZSharp.Nodes
 {
     /// <summary>
     /// Represents a node of generic type SensorBinary

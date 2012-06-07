@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Timers;
 
-namespace iAutomationAtHome.ZSharp.Nodes.DataReader
+namespace ZSharp.Nodes.DataReader
 {
     /// <summary>
     /// Defines a DataReader

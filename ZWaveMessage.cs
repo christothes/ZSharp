@@ -7,7 +7,7 @@
 
 using System.Collections.Generic;
 
-namespace iAutomationAtHome.ZSharp
+namespace ZSharp
 {
 	/// <summary>
 	/// Description of ZWaveRequest.

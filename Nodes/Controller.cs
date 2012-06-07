@@ -7,9 +7,9 @@
 
 using System;
 using System.Collections.Generic;
-using iAutomationAtHome.Debugging;
 
-namespace iAutomationAtHome.ZSharp.Nodes
+
+namespace ZSharp.Nodes
 {
     /// <summary>
     /// Defines a controller
@@ -85,7 +85,7 @@ namespace iAutomationAtHome.ZSharp.Nodes
         /// </summary>
         public override void Initialize()
         {
-            DebugLogger.GetLogger.LogMessage(this, "Created controller node. NODE_ID: " + this._nodeId.ToString("X2"));
+            DebugLogger.Logger.Trace("Created controller node. NODE_ID: " + this._nodeId.ToString("X2"));
             this._port.UnsubscribedMessageEvent += UnsubscribedMessageReceived;
             this.GetSuccessorNode();
         }
@@ -132,7 +132,7 @@ namespace iAutomationAtHome.ZSharp.Nodes
         /// </summary>
         public void Discovery()
         {
-            DebugLogger.GetLogger.LogMessage(this, "Performing node discovery");
+            DebugLogger.Logger.Trace("Performing node discovery");
 
             ZWaveJob job = new ZWaveJob();
             job.Request = new ZWaveMessage(ZWaveProtocol.MessageType.REQUEST,
@@ -163,7 +163,7 @@ namespace iAutomationAtHome.ZSharp.Nodes
 
             if (found == 0)
             {
-                DebugLogger.GetLogger.LogMessage(this, "No nodes were found");
+                DebugLogger.Logger.Error("No nodes were found");
                 this.FireReadyEvent();
             }
         }
@@ -199,14 +199,14 @@ namespace iAutomationAtHome.ZSharp.Nodes
                     node = new SwitchMultilevel(this._port, nodeId);
                     break;
                 default:
-                    DebugLogger.GetLogger.LogMessage(this, "Unknown node found: NODE_ID = " + nodeId.ToString("X2") + " GENERIC_TYPE: " + genericType.ToString("X2"));
+                    DebugLogger.Logger.Warn("Unknown node found: NODE_ID = " + nodeId.ToString("X2") + " GENERIC_TYPE: " + genericType.ToString("X2"));
                     break;
             }
 
             if (node != null)
             {
-                DebugLogger.GetLogger.LogMessage(this, "Node found: NODE_ID = " + nodeId.ToString("X2") + ", GENERIC_TYPE: " + Utils.GenericTypeToString(genericType) + ", SPECIFIC_TYPE: " + specificType.ToString("X2"));
-                DebugLogger.GetLogger.LogMessage(this, "Sleeping: " + sleeping);
+                DebugLogger.Logger.Trace("Node found: NODE_ID = " + nodeId.ToString("X2") + ", GENERIC_TYPE: " + Utils.GenericTypeToString(genericType) + ", SPECIFIC_TYPE: " + specificType.ToString("X2"));
+                DebugLogger.Logger.Trace("Sleeping: " + sleeping);
                 
                 if(!this.Nodes.ContainsKey(nodeId))
                     this.Nodes.Add(nodeId, node);
@@ -262,14 +262,14 @@ namespace iAutomationAtHome.ZSharp.Nodes
                             if ((byte)response.Message[4] != this._nodeId)
                             {
                                 // We are not SUC/SIS. Send request.
-                                DebugLogger.GetLogger.LogMessage(this, "We are not SUC/SIS. Sending request to become one");
+                                DebugLogger.Logger.Trace("We are not SUC/SIS. Sending request to become one");
                                 this.BecomeSuccessorNode();
                                 done = true;
                             }
                             else
                             {
                                 // We are allready SUC/SIS. Advance.
-                                DebugLogger.GetLogger.LogMessage(this, "We are SUC/SIS");
+                                DebugLogger.Logger.Trace("We are SUC/SIS");
                                 this.FireNodeInitializedEvent();
                                 this.Discovery();
                                 done = true;
@@ -286,7 +286,7 @@ namespace iAutomationAtHome.ZSharp.Nodes
                     {
                         case ZWaveProtocol.Function.ENABLE_SUC:
                             // SUC Enabled
-                            DebugLogger.GetLogger.LogMessage(this, "SUC Enabled");
+                            DebugLogger.Logger.Trace("SUC Enabled");
                             done = true;
                             break;
                         default:
@@ -300,7 +300,7 @@ namespace iAutomationAtHome.ZSharp.Nodes
                     {
                         case ZWaveProtocol.Function.SET_SUC_NODE_ID:
                             // We are now SUC/SIS. Advance
-                            DebugLogger.GetLogger.LogMessage(this, "We are now SUC/SIS");
+                            DebugLogger.Logger.Trace("We are now SUC/SIS");
                             this.FireNodeInitializedEvent();
                             this.Discovery();
                             done = true;
@@ -316,7 +316,7 @@ namespace iAutomationAtHome.ZSharp.Nodes
                     {
                         case ZWaveProtocol.Function.SERIAL_API_INIT_DATA:
                             // Extract the nodes from the received bitmask
-                            DebugLogger.GetLogger.LogMessage(this, "Extracting nodes from bitmask");
+                            DebugLogger.Logger.Trace("Extracting nodes from bitmask");
                             this.ExtractNodeList(response.Message);
                             done = true;
                             break;
@@ -331,7 +331,7 @@ namespace iAutomationAtHome.ZSharp.Nodes
                     {
                         case ZWaveProtocol.Function.GET_NODE_PROTOCOL_INFO:
                             // Got protocol info from node
-                            DebugLogger.GetLogger.LogMessage(this, "Got node protocol info");
+                            DebugLogger.Logger.Trace("Got node protocol info");
                             byte[] msg = response.Message;
                             bool sleeping = !((msg[4] & (0x01 << 7)) > 0x00);
                             this.CreateNode(request.NodeId, sleeping, msg[7], msg[8], msg[9]);
@@ -350,7 +350,7 @@ namespace iAutomationAtHome.ZSharp.Nodes
                             switch(response.CommandClass)
                             {
                                 case ZWaveProtocol.CommandClass.ADD_NODE_LEARN_READY:
-                                    DebugLogger.GetLogger.LogMessage(this, "LEARN_READY");
+                                    DebugLogger.Logger.Trace("LEARN_READY");
                                     done = true;
                                     break;
                                 default:
@@ -396,13 +396,13 @@ namespace iAutomationAtHome.ZSharp.Nodes
 
         private void UnsubscribedMessageReceived(object sender, EventArgs e)
         {
-            ZWaveMessage message = ((iAutomationAtHome.ZSharp.ZWavePort.UnsubscribedMessageEventArgs)e).Message;
+            ZWaveMessage message = ((ZSharp.ZWavePort.UnsubscribedMessageEventArgs)e).Message;
 
             switch (message.CommandClass)
             {
                 case ZWaveProtocol.CommandClass.ADD_NODE_STATUS_ADDING_SLAVE:
                     byte nodeId = message.Message[6];
-                    DebugLogger.GetLogger.LogMessage(this, "New node found: " + nodeId.ToString("X2"));
+                    DebugLogger.Logger.Trace("New node found: " + nodeId.ToString("X2"));
                     this.GetNodeProtocolInfo(nodeId);
                     break;
             }

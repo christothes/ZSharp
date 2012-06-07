@@ -7,11 +7,11 @@
 
 using System;
 using System.Collections.Generic;
-using iAutomationAtHome.ZSharp.Nodes.DataReader;
+using ZSharp.Nodes.DataReader;
 using System.Timers;
 using System.ServiceModel;
 
-namespace iAutomationAtHome.ZSharp.Nodes
+namespace ZSharp.Nodes
 {
 	/// <summary>
 	/// Description of ZWaveNode.

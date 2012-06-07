@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace iAutomationAtHome.ZSharp.Nodes.DataReader
+namespace ZSharp.Nodes.DataReader
 {
     /// <summary>
     /// Defines a MeterReader

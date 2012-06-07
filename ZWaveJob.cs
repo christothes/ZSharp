@@ -6,11 +6,11 @@
  */
 
 using System;
-using iAutomationAtHome.ZSharp.Nodes;
+using ZSharp.Nodes;
 using System.Collections.Generic;
 using System.Timers;
 
-namespace iAutomationAtHome.ZSharp
+namespace ZSharp
 {
 	/// <summary>
 	/// Description of ZWaveJob.

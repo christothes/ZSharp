@@ -9,9 +9,9 @@ using System;
 using System.IO.Ports;
 using System.Threading;
 using System.Collections.Generic;
-using iAutomationAtHome.Debugging;
 
-namespace iAutomationAtHome.ZSharp
+
+namespace ZSharp
 {
 	/// <summary>
 	/// A class that deals with low level serial communications with a Z-Wave USB Controller.
@@ -84,7 +84,7 @@ namespace iAutomationAtHome.ZSharp
                     }
                     catch (Exception e)
                     {
-                        DebugLogger.GetLogger.LogMessage(this, "ZWave controller not found at port: " + this._sp.PortName);
+                        DebugLogger.Logger.Trace("ZWave controller not found at port: " + this._sp.PortName);
                     }
 
                     if (this._sp.IsOpen)
@@ -93,13 +93,13 @@ namespace iAutomationAtHome.ZSharp
 
                 if (this._sp.IsOpen)
                 {
-                    DebugLogger.GetLogger.LogMessage(this, "Found ZWave controller at port: " + this._sp.PortName);
+                    DebugLogger.Logger.Trace("Found ZWave controller at port: " + this._sp.PortName);
                     this._runner.Start();
                     return true;
                 }
                 else
                 {
-                    DebugLogger.GetLogger.LogMessage(this, "ZWave controller not found");
+                    DebugLogger.Logger.Error("ZWave controller not found");
                     return false;
                 }
             }

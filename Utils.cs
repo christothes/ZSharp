@@ -1,0 +1,43 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ZSharp
+{
+    public static class Utils
+    {
+        // Methods
+        internal static byte[] ByteSubstring(byte[] buffer, int startIndex, int length)
+        {
+            byte[] buffer2 = new byte[length];
+            for (int i = 0; i < length; i++)
+            {
+                buffer2[i] = buffer[i];
+            }
+            return buffer2;
+        }
+
+        internal static string ByteArrayToString(byte[] message)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal enum VersionType
+        {
+            API,
+            SDK
+        }
+
+        internal static string VersionToString(byte[] p, VersionType versionType)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal static string GenericTypeToString(byte genericType)
+        {
+            throw new NotImplementedException();
+        }
+    }
+}

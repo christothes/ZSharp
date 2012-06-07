@@ -1,9 +1,9 @@
 ﻿using System;
-using iAutomationAtHome.Debugging;
-using iAutomationAtHome.ZSharp.Nodes.DataReader;
+
+using ZSharp.Nodes.DataReader;
 using System.Timers;
 
-namespace iAutomationAtHome.ZSharp.Nodes
+namespace ZSharp.Nodes
 {
     /// <summary>
     /// Represents a node of generic type SwitchMultilevel
@@ -70,7 +70,7 @@ namespace iAutomationAtHome.ZSharp.Nodes
             {
                 this._state = state;
                 this.FireNodeChangedStateEvent();
-                DebugLogger.GetLogger.LogMessage(this, "Node " + this._nodeId + " changed state: " + this._state);
+                DebugLogger.Logger.Trace("Node " + this._nodeId + " changed state: " + this._state);
             }
         }
 

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Timers;
-using iAutomationAtHome.Debugging;
 
-namespace iAutomationAtHome.ZSharp.Nodes
+
+namespace ZSharp.Nodes
 {
     /// <summary>
     /// Defines the basic methods of a switch

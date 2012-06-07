@@ -7,10 +7,9 @@
  */
 
 using System;
-using iAutomationAtHome.Debugging;
-using iAutomationAtHome.ZSharp.Nodes;
+using ZSharp.Nodes;
 
-namespace iAutomationAtHome.ZSharp
+namespace ZSharp
 {
 	/// <summary>
 	/// Description of ZWave.
@@ -81,7 +80,7 @@ namespace iAutomationAtHome.ZSharp
                 return;
             }
             
-            DebugLogger.GetLogger.LogMessage(this, "Initializing");
+            DebugLogger.Logger.Trace("Initializing");
             this.GetVersion();
         }
 
@@ -161,7 +160,7 @@ namespace iAutomationAtHome.ZSharp
 
         private void ParseVersionInformation(byte[] message)
         {
-            DebugLogger.GetLogger.LogMessage(this, "Received version information: API Version: " + Utils.VersionToString(Utils.ByteSubstring(message, 11, 4), Utils.VersionType.API) +
+            DebugLogger.Logger.Trace("Received version information: API Version: " + Utils.VersionToString(Utils.ByteSubstring(message, 11, 4), Utils.VersionType.API) +
                               ", SDK Version: " + Utils.VersionToString(Utils.ByteSubstring(message, 11, 4), Utils.VersionType.SDK));
         }
 
@@ -170,7 +169,7 @@ namespace iAutomationAtHome.ZSharp
             String homeId = Utils.ByteArrayToString(Utils.ByteSubstring(message, 4, 4));
             byte controllerId = message[8];
 
-            DebugLogger.GetLogger.LogMessage(this, "Received network configuration: HOME_ID: " + homeId +
+            DebugLogger.Logger.Trace("Received network configuration: HOME_ID: " + homeId +
                   ", PRIMARY_CONTROLLER_ID: " + controllerId.ToString("X2"));
 
             this.CreateController(controllerId);
@@ -190,7 +189,7 @@ namespace iAutomationAtHome.ZSharp
         {
             ((ZWaveNode)sender).NodeInitializedEvent -= NodesInitialized;
             this.FireZWaveReadyEvent();
-            DebugLogger.GetLogger.LogMessage(this, "All nodes initialized. We are good to go.");
+            DebugLogger.Logger.Trace("All nodes initialized. We are good to go.");
         }
 
         // The controller is initialized

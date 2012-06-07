@@ -7,7 +7,7 @@
 
 using System;
 
-namespace iAutomationAtHome.ZSharp
+namespace ZSharp
 {
 	/// <summary>
 	/// Contains
