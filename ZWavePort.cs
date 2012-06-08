@@ -9,6 +9,7 @@ using System;
 using System.IO.Ports;
 using System.Threading;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 
 namespace ZSharp
@@ -38,7 +39,9 @@ namespace ZSharp
 		private Thread _runner;
         private Object _queueLock = new Object();
 
+        //TODO:Implement as actual QUEUE
         private LinkedList<ZWaveJob> _jobQueue;
+        //TODO:Implement as actual QUEUE
         private LinkedList<ZWaveJob> JobQueue
 		{
 			get
@@ -70,7 +73,7 @@ namespace ZSharp
 		/// </summary>
 		public bool Open()
 		{
-            Console.WriteLine("Opening port: " + this._sp.PortName);
+            Debug.WriteLine("Opening port: " + this._sp.PortName);
             if (!this._sp.IsOpen)
             {
                 for (int i = 1; i < 5; i++)
@@ -158,7 +161,7 @@ namespace ZSharp
                             // Read rest of the frame
                             this._sp.Read(buf, 2, len);
                             byte[] message = Utils.ByteSubstring(buf, 0, (len + 2));
-                            Console.WriteLine("Received: " + Utils.ByteArrayToString(message));
+                            Debug.WriteLine("Received: " + Utils.ByteArrayToString(message));
 
                             // Verify checksum
                             if (message[(message.Length - 1)] == CalculateChecksum(Utils.ByteSubstring(message, 0, (message.Length - 1))))
@@ -189,26 +192,26 @@ namespace ZSharp
 
                                 // Send ACK - Checksum is correct
                                 this._sp.Write(new byte[] { ZWaveProtocol.ACK }, 0, 1);
-                                Console.WriteLine("Sent: ACK");
+                                Debug.WriteLine("Sent: ACK");
                             }
                             else
                             {
                                 // Send NAK
                                 this._sp.Write(new byte[] { ZWaveProtocol.NAK }, 0, 1);
-                                Console.WriteLine("Sent: NAK");
+                                Debug.WriteLine("Sent: NAK");
                             }
 
                             break;
                         case ZWaveProtocol.CAN:
-                            Console.WriteLine("Received: CAN");
+                            Debug.WriteLine("Received: CAN");
                             break;
                         case ZWaveProtocol.NAK:
-                            Console.WriteLine("Received: NAK");
+                            Debug.WriteLine("Received: NAK");
                             _currentJob.AwaitACK = false;
                             _currentJob.JobStarted = false;
                             break;
                         case ZWaveProtocol.ACK:
-                            Console.WriteLine("Received: ACK");
+                            Debug.WriteLine("Received: ACK");
                             if (_currentJob != null)
                             {
                                 if (_currentJob.AwaitACK && !_currentJob.AwaitResponse)
@@ -219,7 +222,7 @@ namespace ZSharp
                             }
                             break;
                         default:
-                            Console.WriteLine("Critical error. Out of frame flow.");
+                            Debug.WriteLine("Critical error. Out of frame flow.");
                             break;
                     }
                 }
@@ -253,7 +256,7 @@ namespace ZSharp
                                 _currentJob.Resend = false;
                                 _currentJob.AwaitACK = true;
                                 _currentJob.SendCount++;
-                                Console.WriteLine("Sent: " + Utils.ByteArrayToString(msg.Message));
+                                Debug.WriteLine("Sent: " + Utils.ByteArrayToString(msg.Message));
                             }
                         }
                     }

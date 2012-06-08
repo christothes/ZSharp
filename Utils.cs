@@ -21,7 +21,13 @@ namespace ZSharp
 
         internal static string ByteArrayToString(byte[] message)
         {
-            throw new NotImplementedException();
+            string s = string.Empty;
+            for (int i = 0; i < message.Length; i++)
+            {
+                s += message[i];
+            }
+            
+            return s;
         }
 
         internal enum VersionType
