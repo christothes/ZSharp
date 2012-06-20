@@ -38,7 +38,12 @@ namespace ZSharp
 
         internal static string VersionToString(byte[] p, VersionType versionType)
         {
-            throw new NotImplementedException();
+            string s = string.Empty;
+            foreach (var b in p)
+            {
+                s += b;
+            }
+            return s;
         }
 
         internal static string GenericTypeToString(byte genericType)

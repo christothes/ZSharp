@@ -76,7 +76,7 @@ namespace ZSharp
             Debug.WriteLine("Opening port: " + this._sp.PortName);
             if (!this._sp.IsOpen)
             {
-                for (int i = 1; i < 5; i++)
+                for (int i = 5; i > 0; i--)
                 {
                     String port = "COM" + i;
                     this._sp.PortName = port;

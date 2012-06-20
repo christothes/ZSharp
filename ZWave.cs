@@ -195,7 +195,7 @@ namespace ZSharp
         // The controller is initialized
         private void ControllerInitialized(object sender, EventArgs e)
         {
-            this.FireZWaveInitializedEvent();
+            DebugLogger.Logger.Trace("Yay");
         }
 	}
 }

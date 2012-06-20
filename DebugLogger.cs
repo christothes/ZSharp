@@ -7,8 +7,12 @@ using NLog;
 
 namespace ZSharp
 {
-    class DebugLogger
+    static class DebugLogger
     {
+        static DebugLogger()
+        {
+        }
+
         public static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     }
 }
