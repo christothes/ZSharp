@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NLog;
 using ZSharp;
+using ZSharp.Nodes;
 
 namespace ZSharpCon
 {
@@ -23,27 +24,72 @@ namespace ZSharpCon
         {
             zw = new ZWave();
             zw.ZWaveInitializedEvent += zw_ZWaveInitializedEvent;
-            zw.Initialize();
             zw.ZWaveReadyEvent += zw_ZWaveReadyEvent;
-
-            while (true)
-            {
-                //hack loop just to wait for events.
-                Thread.Sleep(1000);
-            }
+            zw.Initialize();            
         }
 
+        private static void RunLoop()
+        {
+            ConsoleKeyInfo key;
+            key = Console.ReadKey();
+            while (true)
+            {
+                key = Console.ReadKey();
+
+                switch (key.Key)
+                {
+                    case ConsoleKey.R:
+                        Console.WriteLine("Reset Command");
+                        zw.Controller.Reset();
+                        break;
+                    case ConsoleKey.Insert:
+                        Console.WriteLine("AddNewNodeStart Command");
+                        zw.Controller.AddNewNodeStart();
+                        break;
+               
+                    case ConsoleKey.End:
+                        Console.WriteLine("AddNewNodeEnd Command");
+                        zw.Controller.AddNewNodeStop();
+                        break;
+
+                    case ConsoleKey.Spacebar:
+                        foreach (var nodeEntry in zw.Controller.Nodes)
+                        {
+                            var node = nodeEntry.Value;
+                            var sw = node as SwitchBinary;
+                            if (sw != null)
+                            {
+                                Console.WriteLine(string.Format("Switch in state: {0}", sw.State.ToString()));
+                                if (sw.State == 0xff)
+                                {
+                                    Console.WriteLine("And then there was darkness...");
+                                    sw.Off();
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Let there be light!");
+                                    sw.On();
+                                }
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
         static void zw_ZWaveInitializedEvent(object sender, EventArgs e)
         {
             Logger.Trace("");
-            zw.Controller.AddNewNodeStart();
         }
 
         static void zw_ZWaveReadyEvent(object sender, EventArgs e)
         {
             Logger.Trace("READY!");
-            
-            
+            Task.Factory.StartNew(() =>
+            {
+                RunLoop();
+            });
         }
     }
 }

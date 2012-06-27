@@ -48,7 +48,25 @@ namespace ZSharp
 
         internal static string GenericTypeToString(byte genericType)
         {
-            throw new NotImplementedException();
+            switch (genericType)
+            {
+                case 0x01:
+                    return "GENERIC_CONTROLLER";
+                case 0x02:
+                    return "STATIC_CONTROLLER";
+                case 0x10:
+                    return "SWITCH_BINARY";
+                case 0x11:
+                    return "SWITCH_MULTILEVEL";
+                case 0x20:
+                    return "SENSOR_BINARY";
+                case 0x21:
+                    return "SENSOR_MULTILEVEL";
+                case 0x31:
+                    return "METER";
+                default:
+                    return "Unknown";
+            }
         }
     }
 }

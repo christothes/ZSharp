@@ -92,6 +92,7 @@ namespace ZSharp.Nodes
 
         private void GetSuccessorNode()
         {
+            DebugLogger.Logger.Trace("");
             ZWaveJob job = new ZWaveJob();
             job.Request = new ZWaveMessage(ZWaveProtocol.MessageType.REQUEST,
                                                          ZWaveProtocol.Function.GET_SUC_NODE_ID);
@@ -104,6 +105,7 @@ namespace ZSharp.Nodes
         /// </summary>
         public void BecomeSuccessorNode()
         {
+            DebugLogger.Logger.Trace("");
             ZWaveJob enable = new ZWaveJob();
             enable.Request = new ZWaveMessage(ZWaveProtocol.MessageType.REQUEST,
                                                         ZWaveProtocol.Function.ENABLE_SUC);
@@ -143,6 +145,7 @@ namespace ZSharp.Nodes
 
         private void ExtractNodeList(byte[] response)
         {
+            DebugLogger.Logger.Trace("");
             int found = 0;
             for (int i = 7; i < 35; i++)
             {
@@ -170,6 +173,7 @@ namespace ZSharp.Nodes
 
         private void GetNodeProtocolInfo(byte nodeId)
         {
+            DebugLogger.Logger.Trace("");
             ZWaveJob pInfo = new ZWaveJob();
             pInfo.Request = new ZWaveMessage(ZWaveProtocol.MessageType.REQUEST,
                                              ZWaveProtocol.Function.GET_NODE_PROTOCOL_INFO,
@@ -180,6 +184,7 @@ namespace ZSharp.Nodes
 
         private void CreateNode(byte nodeId, bool sleeping, byte basicType, byte genericType, byte specificType)
         {
+            DebugLogger.Logger.Trace("");
             ZWaveNode node = null;
             switch (genericType)
             {
@@ -225,6 +230,7 @@ namespace ZSharp.Nodes
 
         private void SetWakeupInterval(byte nodeId)
         {
+            DebugLogger.Logger.Trace("");
             ZWaveJob wi = new ZWaveJob();
             wi.Request = new ZWaveMessage(ZWaveProtocol.MessageType.REQUEST,
                                           ZWaveProtocol.Function.SEND_DATA,
@@ -247,6 +253,7 @@ namespace ZSharp.Nodes
 
         private void ResponseReceived(object sender, EventArgs e)
         {
+            DebugLogger.Logger.Trace("");
             ZWaveJob job = (ZWaveJob)sender;
             ZWaveMessage response = job.GetResponse();
             ZWaveMessage request = job.Request;
@@ -396,6 +403,7 @@ namespace ZSharp.Nodes
 
         private void UnsubscribedMessageReceived(object sender, EventArgs e)
         {
+            DebugLogger.Logger.Trace("");
             ZWaveMessage message = ((ZSharp.ZWavePort.UnsubscribedMessageEventArgs)e).Message;
 
             switch (message.CommandClass)
@@ -405,11 +413,36 @@ namespace ZSharp.Nodes
                     DebugLogger.Logger.Trace("New node found: " + nodeId.ToString("X2"));
                     this.GetNodeProtocolInfo(nodeId);
                     break;
+
+                case ZWaveProtocol.CommandClass.WAKE_UP:
+                    DebugLogger.Logger.Trace("ZWaveProtocol.CommandClass.WAKE_UP");
+                    break;
+                case ZWaveProtocol.CommandClass.SWITCH_BINARY:
+                    DebugLogger.Logger.Trace("ZWaveProtocol.CommandClass.SWITCH_BINARY");
+                    break;
+                case ZWaveProtocol.CommandClass.SWITCH_MULTILEVEL:
+                    DebugLogger.Logger.Trace("ZWaveProtocol.CommandClass.SWITCH_MULTILEVEL");
+                    break;
+                case ZWaveProtocol.CommandClass.METER:
+                    DebugLogger.Logger.Trace("ZWaveProtocol.CommandClass.METER");
+                    break;
+                case ZWaveProtocol.CommandClass.METER_PULSE:
+                    DebugLogger.Logger.Trace("ZWaveProtocol.CommandClass.METER_PULSE");
+                    break;
+                case ZWaveProtocol.CommandClass.SENSOR_MULTILEVEL:
+                    DebugLogger.Logger.Trace("ZWaveProtocol.CommandClass.SENSOR_MULTILEVEL");
+                    break;
+                case ZWaveProtocol.CommandClass.MANUFACTURER_SPECIFIC:
+                    DebugLogger.Logger.Trace("ZWaveProtocol.CommandClass.MANUFACTURER_SPECIFIC");
+                    break;
+                default:
+                    break;
             }
         }
 
         private void NodeInitialized(object sender, EventArgs e)
         {
+            DebugLogger.Logger.Trace("");
             ((ZWaveNode)sender).NodeInitializedEvent -= NodeInitialized;
             this._nodesInitialized++;
             if (this._nodesInitialized == this.Nodes.Count)
@@ -424,6 +457,7 @@ namespace ZSharp.Nodes
         /// </summary>
         public void AddNewNodeStart()
         {
+            DebugLogger.Logger.Trace("");
             ZWaveJob job = new ZWaveJob();
             job.Request = new ZWaveMessage(ZWaveProtocol.MessageType.REQUEST, 
                                            ZWaveProtocol.Function.ADD_NODE_TO_NETWORK);
@@ -437,6 +471,7 @@ namespace ZSharp.Nodes
         /// </summary>
         public void AddNewNodeStop()
         {
+            DebugLogger.Logger.Trace("");
             ZWaveJob job = new ZWaveJob();
             job.Request = new ZWaveMessage(ZWaveProtocol.MessageType.REQUEST,
                                            ZWaveProtocol.Function.ADD_NODE_TO_NETWORK);
@@ -450,6 +485,7 @@ namespace ZSharp.Nodes
         /// </summary>
         public void Reset()
         {
+            DebugLogger.Logger.Trace("");
             ZWaveJob job = new ZWaveJob();
             job.Request = new ZWaveMessage(ZWaveProtocol.MessageType.REQUEST,
                                            ZWaveProtocol.Function.SET_DEFAULT);

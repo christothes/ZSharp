@@ -87,7 +87,7 @@ namespace ZSharp
                     }
                     catch (Exception e)
                     {
-                        DebugLogger.Logger.Trace("ZWave controller not found at port: " + this._sp.PortName);
+                        DebugLogger.Logger.Error(string.Format("ZWave controller not found at port: {0}\n{1}", this._sp.PortName, e.ToString()));
                     }
 
                     if (this._sp.IsOpen)
