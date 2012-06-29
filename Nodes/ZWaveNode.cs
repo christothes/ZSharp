@@ -302,7 +302,7 @@ namespace ZSharp.Nodes
                             for (int i = 10; i < ((int)(6 + response.Message[6])); i++)
                             {
                                 this._capabilities.Add(response.Message[i]);
-                                System.Diagnostics.Debug.WriteLine(response.Message[i].ToString("X2"));
+                                DebugLogger.Logger.Trace(response.Message[i].ToString("X2"));
                             }
                             this.BaseNodeInitialized();
                             done = true;
@@ -318,7 +318,7 @@ namespace ZSharp.Nodes
                     {
                         case ZWaveProtocol.Function.REQUEST_NODE_NEIGHBOR_UPDATE:
                             this.GetManufacturerSpecificReport();
-                            job.Done();
+                            job.MarkDone();
                             break;
                         default:
                             job.SetTimeout(3000);
@@ -334,7 +334,7 @@ namespace ZSharp.Nodes
             if (done)
             {
                 job.ResponseReceived -= ResponseReceived;
-                job.Done();
+                job.MarkDone();
             }
         }
 	}

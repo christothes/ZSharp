@@ -66,6 +66,7 @@ namespace ZSharp
 		/// </summary>
         public ZWave()
 		{
+            DebugLogger.Logger.Trace("");
             this._port = new ZWavePort();
 		}
 
@@ -74,6 +75,7 @@ namespace ZSharp
         /// </summary>
         public void Initialize()
         {
+            DebugLogger.Logger.Trace("");
             if (!this._port.Open())
             {
                 this.FireZWaveFailedEvent();
@@ -86,6 +88,7 @@ namespace ZSharp
 
         private void GetVersion()
         {
+            DebugLogger.Logger.Trace("");
             ZWaveJob v = new ZWaveJob();
             v.Request = new ZWaveMessage(ZWaveProtocol.MessageType.REQUEST,
                                          ZWaveProtocol.Function.GET_VERSION);
@@ -95,6 +98,7 @@ namespace ZSharp
 
         private void GetHomeID()
         {
+            DebugLogger.Logger.Trace("");
             ZWaveJob h = new ZWaveJob();
             h.Request = new ZWaveMessage(ZWaveProtocol.MessageType.REQUEST,
                                          ZWaveProtocol.Function.MEMORY_GET_ID);
@@ -107,11 +111,13 @@ namespace ZSharp
         /// </summary>
         public void ShutdownGracefully()
         {
+            DebugLogger.Logger.Trace("");
             this._port.Close();
         }
 
         private void ResponseReceived(object sender, EventArgs e)
         {
+            DebugLogger.Logger.Trace("");
             ZWaveJob job = (ZWaveJob)sender;
             ZWaveMessage request = job.Request;
             ZWaveMessage response = job.GetResponse();
@@ -153,7 +159,7 @@ namespace ZSharp
 
             if (done)
             {
-                job.Done();
+                job.MarkDone();
                 job.ResponseReceived -= ResponseReceived;
             }
         }
@@ -178,6 +184,7 @@ namespace ZSharp
         // Create the controller node
         private void CreateController(byte controllerId)
         {
+            DebugLogger.Logger.Trace("");
             this._controller = new Controller(this._port, controllerId);
             this._controller.NodeInitializedEvent += ControllerInitialized;
             this._controller.ReadyEvent += NodesInitialized;

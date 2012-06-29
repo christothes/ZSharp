@@ -47,7 +47,7 @@ namespace ZSharp.Nodes.DataReader
 
             if (done)
             {
-                job.Done();
+                job.MarkDone();
                 job.ResponseReceived -= MeterReportReceived;
             }
         }

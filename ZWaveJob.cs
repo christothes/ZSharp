@@ -58,9 +58,9 @@ namespace ZSharp
 
         public void CancelJob()
         {
-            System.Diagnostics.Debug.WriteLine("*** Canceled");
+            DebugLogger.Logger.Trace("*** Canceled");
             
-            this.Done();
+            this.MarkDone();
             this._awaitACK = false;
             this._awaitResponse = false;
             this.FireJobCanceledEvent();
@@ -68,7 +68,7 @@ namespace ZSharp
 
         public void TriggerResend()
         {
-            System.Diagnostics.Debug.WriteLine("*** Trigger resend");
+            DebugLogger.Logger.Trace("*** Trigger resend");
             
             this._awaitACK = false;
             this._awaitResponse = false;
@@ -118,10 +118,10 @@ namespace ZSharp
         
         public bool Resend = false;
 
-        public bool JobDone = false;
-        public void Done()
+        public bool IsDone = false;
+        public void MarkDone()
         {
-            this.JobDone = true;
+            this.IsDone = true;
             this.RemoveTimeout();
         }
 

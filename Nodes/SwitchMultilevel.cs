@@ -176,7 +176,7 @@ namespace ZSharp.Nodes
 
             if (done)
             {
-                job.Done();
+                job.MarkDone();
                 job.ResponseReceived -= ResponseReceived;
             }
         }

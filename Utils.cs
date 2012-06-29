@@ -24,7 +24,7 @@ namespace ZSharp
             string s = string.Empty;
             for (int i = 0; i < message.Length; i++)
             {
-                s += message[i];
+                s += message[i].ToString("X2") + " ";
             }
             
             return s;

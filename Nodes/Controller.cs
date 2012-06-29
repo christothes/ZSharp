@@ -157,7 +157,7 @@ namespace ZSharp.Nodes
                         if (nodeId != this._nodeId)
                         {
                             found++;
-                            System.Diagnostics.Debug.WriteLine("NodeID:" + nodeId);
+                            DebugLogger.Logger.Trace("NodeID:" + nodeId);
                             this.GetNodeProtocolInfo(nodeId);
                         }
                     }
@@ -239,7 +239,7 @@ namespace ZSharp.Nodes
                                           ZWaveProtocol.Command.WAKE_UP_INTERVAL_SET);
             
             long seconds = (long)(ZWaveProtocol.ValueConstants.WAKE_UP_INTERVAL / 1000);
-            System.Diagnostics.Debug.WriteLine(seconds);
+            DebugLogger.Logger.Trace(seconds);
             // MSB
             wi.Request.AddParameter((byte)((seconds >> 16) & 0xFF));
             wi.Request.AddParameter((byte)((seconds >> 8) & 0xFF));
@@ -396,15 +396,16 @@ namespace ZSharp.Nodes
 
             if (done)
             {
-                job.Done();
+                job.MarkDone();
                 job.ResponseReceived -= ResponseReceived;
             }
         }
 
         private void UnsubscribedMessageReceived(object sender, EventArgs e)
         {
-            DebugLogger.Logger.Trace("");
+            
             ZWaveMessage message = ((ZSharp.ZWavePort.UnsubscribedMessageEventArgs)e).Message;
+            DebugLogger.Logger.Trace(message.ToString());
 
             switch (message.CommandClass)
             {
@@ -477,7 +478,7 @@ namespace ZSharp.Nodes
                                            ZWaveProtocol.Function.ADD_NODE_TO_NETWORK);
             job.Request.AddParameter(ZWaveProtocol.CommandClass.ADD_NODE_STOP);
             job.ResponseReceived += ResponseReceived;
-            this._port.InjectJob(job);
+            this._port.EnqueueJob(job);
         }
 
         /// <summary>

@@ -38,6 +38,9 @@ namespace ZSharpCon
 
                 switch (key.Key)
                 {
+                    case ConsoleKey.Escape:
+                        zw.ShutdownGracefully();
+                        return;
                     case ConsoleKey.R:
                         Console.WriteLine("Reset Command");
                         zw.Controller.Reset();

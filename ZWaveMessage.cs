@@ -25,6 +25,11 @@ namespace ZSharp
             }
         }
 
+        /// <summary>
+        /// string representation of the MessageType byte value
+        /// </summary>
+        public string MessageType_s { get { return ZWaveProtocol.MessageType.GetStringValue(this.MessageType); } }
+
         private byte _function;
         public byte Function
         {
@@ -33,6 +38,12 @@ namespace ZSharp
                 return this._function;
             }
         }
+
+        /// <summary>
+        /// string representation of the Function byte value
+        /// </summary>
+        public string Function_s { get { return ZWaveProtocol.Function.GetStringValue(this.Function); } }
+
 
         private byte _nodeId;
         public byte NodeId
@@ -51,6 +62,11 @@ namespace ZSharp
                 return this._commandClass;
             }
         }
+
+        /// <summary>
+        /// string representation of the CommandClass byte value
+        /// </summary>
+        public string CommandClass_s { get { return ZWaveProtocol.CommandClass.GetStringValue(this.CommandClass); } }
 
         private byte _command;
         public byte Command
@@ -144,7 +160,7 @@ namespace ZSharp
         {
             this._messageType = message[2];
             this._function = message[3];
-            
+
             switch (this._function)
             {
                 case ZWaveProtocol.Function.SEND_DATA:
@@ -164,6 +180,9 @@ namespace ZSharp
                     this._commandClass = 0x00;
                     break;
             }
+
+            if (this._messageType == ZWaveProtocol.MessageType.REQUEST)
+                this._nodeId = message[5];
         }
 
         
@@ -197,6 +216,28 @@ namespace ZSharp
             this._message = message;
             this._raw = true;
             this.Parse(message);
+        }
+
+        public override string ToString()
+        {
+            return string.Format(@"
+===============================
+Zwave Message
+===============================
+Command: {0}
+CommandClass: {1}
+Function: {2}
+Message: {3}
+MessageType: {4}
+NodeID: {5}
+==============================
+",
+ this.Command.ToString("X2"),
+ this.CommandClass_s,
+ this.Function_s,
+ Utils.ByteArrayToString(this.Message),
+ this.MessageType_s,
+ this.NodeId.ToString("X2"));
         }
 	}
 }

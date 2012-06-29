@@ -57,7 +57,7 @@ namespace ZSharp.Nodes
         {
             this._stateTimer = new Timer(ZWaveProtocol.ValueConstants.STATE_POLL_INTERVAL);
             this._stateTimer.AutoReset = true;
-            this._stateTimer.Elapsed += GetState;
+            //this._stateTimer.Elapsed += GetState;
             this._stateTimer.Start();
 
             this.GetState(this, null);
@@ -176,7 +176,7 @@ namespace ZSharp.Nodes
 
             if (done)
             {
-                job.Done();
+                job.MarkDone();
                 job.ResponseReceived -= ResponseReceived;
             }
         }
