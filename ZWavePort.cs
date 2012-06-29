@@ -42,16 +42,6 @@ namespace ZSharp
 
         private ConcurrentQueue<ZWaveJob> JobQueue = new ConcurrentQueue<ZWaveJob>();
 
-        //private LinkedList<ZWaveJob> _jobQueue;
-        //private LinkedList<ZWaveJob> JobQueue
-        //{
-        //    get
-        //    {
-        //        if (this._jobQueue == null) this._jobQueue = new LinkedList<ZWaveJob>();
-        //        return this._jobQueue;
-        //    }
-        //}
-
 		/// <summary>
 		/// Create and initialize a new communication port.
 		/// </summary>
@@ -118,150 +108,6 @@ namespace ZSharp
             this._sp.Close();
             this._sp.Dispose();
         }
-
-        //private void Run()
-        //{
-        //    byte[] buf = new byte[1024];
-        //    while (this._sp.IsOpen)
-        //    {
-        //        ZWaveJob _currentJob = null;
-        //        lock (this._queueLock)
-        //        {
-        //            if (this.JobQueue.Count > 0)
-        //            {
-        //                _currentJob = this.JobQueue.First.Value;
-        //                if (_currentJob.JobDone)
-        //                {
-        //                    this.JobQueue.RemoveFirst();
-        //                    _currentJob = null;
-        //                    if (this.JobQueue.Count > 0)
-        //                    {
-        //                        _currentJob = this.JobQueue.First.Value;
-        //                    }
-        //                }
-        //            }
-        //        }
-
-        //        // Check for incoming messages
-        //        int btr = this._sp.BytesToRead;
-        //        if (btr > 0)
-        //        {
-        //            // Read first byte
-        //            this._sp.Read(buf, 0, 1);
-        //            switch (buf[0])
-        //            {
-        //                case ZWaveProtocol.SOF:
-
-        //                    // Read the length byte
-        //                    this._sp.Read(buf, 1, 1);
-        //                    byte len = buf[1];
-
-        //                    // Read rest of the frame
-        //                    this._sp.Read(buf, 2, len);
-        //                    byte[] message = Utils.ByteSubstring(buf, 0, (len + 2));
-        //                    DebugLogger.Logger.Trace("Received: " + Utils.ByteArrayToString(message));
-
-        //                    // Verify checksum
-        //                    if (message[(message.Length - 1)] == CalculateChecksum(Utils.ByteSubstring(message, 0, (message.Length - 1))))
-        //                    {
-        //                        ZWaveMessage zMessage = new ZWaveMessage(message);
-
-        //                        if (_currentJob == null)
-        //                        {
-        //                            // Incoming response?
-        //                            this.FireUnsubscribedMessageEvent(zMessage);
-        //                            DebugLogger.Logger.Trace("*** Incoming response");
-        //                        }
-        //                        else
-        //                        {
-        //                            if (_currentJob.AwaitACK)
-        //                            {
-        //                                // We wanted an ACK instead. Resend...
-        //                                _currentJob.AwaitACK = false;
-        //                                _currentJob.AwaitResponse = false;
-        //                                _currentJob.Resend = true;
-        //                            }
-        //                            else
-        //                            {
-        //                                _currentJob.AddResponse(zMessage);
-        //                                this.FireUnsubscribedMessageEvent(zMessage);
-        //                            }
-        //                        }
-
-        //                        // Send ACK - Checksum is correct
-        //                        this._sp.Write(new byte[] { ZWaveProtocol.ACK }, 0, 1);
-        //                        DebugLogger.Logger.Trace("Sent: ACK");
-        //                    }
-        //                    else
-        //                    {
-        //                        // Send NAK
-        //                        this._sp.Write(new byte[] { ZWaveProtocol.NAK }, 0, 1);
-        //                        DebugLogger.Logger.Trace("Sent: NAK");
-        //                    }
-
-        //                    break;
-        //                case ZWaveProtocol.CAN:
-        //                    DebugLogger.Logger.Trace("Received: CAN");
-        //                    break;
-        //                case ZWaveProtocol.NAK:
-        //                    DebugLogger.Logger.Trace("Received: NAK");
-        //                    _currentJob.AwaitACK = false;
-        //                    _currentJob.JobStarted = false;
-        //                    break;
-        //                case ZWaveProtocol.ACK:
-        //                    DebugLogger.Logger.Trace("Received: ACK");
-        //                    if (_currentJob != null)
-        //                    {
-        //                        if (_currentJob.AwaitACK && !_currentJob.AwaitResponse)
-        //                        {
-        //                            _currentJob.AwaitResponse = true;
-        //                            _currentJob.AwaitACK = false;
-        //                        }
-        //                    }
-        //                    break;
-        //                default:
-        //                    DebugLogger.Logger.Trace("Critical error. Out of frame flow.");
-        //                    break;
-        //            }
-        //        }
-        //        else
-        //        {
-        //            if (_currentJob == null)
-        //            {
-        //                lock (this._queueLock)
-        //                {
-        //                    if (this.JobQueue.Count > 0)
-        //                    {
-        //                        _currentJob = this.JobQueue.First.Value;
-        //                    }
-        //                }
-        //            }
-
-        //            if (_currentJob != null)
-        //            {
-        //                if (_currentJob.SendCount >= 3)
-        //                {
-        //                    _currentJob.CancelJob();
-        //                }
-
-        //                if ((!_currentJob.JobStarted && !_currentJob.JobDone) || _currentJob.Resend)
-        //                {
-        //                    ZWaveMessage msg = _currentJob.Request;
-        //                    if (msg != null)
-        //                    {
-        //                        this._sp.Write(msg.Message, 0, msg.Message.Length);
-        //                        _currentJob.Start();
-        //                        _currentJob.Resend = false;
-        //                        _currentJob.AwaitACK = true;
-        //                        _currentJob.SendCount++;
-        //                        DebugLogger.Logger.Trace("Sent: " + Utils.ByteArrayToString(msg.Message));
-        //                    }
-        //                }
-        //            }
-        //        }
-        //        Thread.Sleep(100);
-        //    }
-        //}
 		
 		/// <summary>
 		///
@@ -403,14 +249,6 @@ namespace ZSharp
         {
             this.JobQueue.Enqueue(job);
         }
-
-        //public void EnqueueJob(ZWaveJob job)
-        //{
-        //    lock (this._queueLock)
-        //    {
-        //        this.JobQueue.AddLast(job);
-        //    }
-        //}
 
 		public static byte CalculateChecksum(byte[] message)
 		{
