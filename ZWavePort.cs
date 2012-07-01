@@ -39,6 +39,7 @@ namespace ZSharp
         private SerialPort _sp;
 		private Thread _runner;
         private Object _queueLock = new Object();
+        private byte[] buff2 = new byte[1024];
 
         private ConcurrentQueue<ZWaveJob> JobQueue = new ConcurrentQueue<ZWaveJob>();
 
@@ -48,6 +49,7 @@ namespace ZSharp
 		public ZWavePort()
 		{
 			this._sp = new SerialPort();
+            _sp.DataReceived += _sp_DataReceived;
 			this._sp.Parity = Parity.None;
 			this._sp.BaudRate = 115200;
 			this._sp.Handshake = Handshake.None;
@@ -58,6 +60,14 @@ namespace ZSharp
 			
 			this._runner = new Thread(new ThreadStart(Run));
 		}
+
+        void _sp_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        {
+            var sp = sender as SerialPort;
+            DebugLogger.Logger.Trace(string.Format("Event Type {0}, Bytes: {1}", e.EventType.ToString(), sp.BytesToRead));
+
+
+        }
 		
 		/// <summary>
 		/// Open the port.
@@ -118,10 +128,14 @@ namespace ZSharp
             ZWaveJob _currentJob = null;
 
             while (this._sp.IsOpen)
-            {
+            {             
+
                 //We work on the current job until its done. Only dequeue the next job after that
                 if (_currentJob == null || _currentJob.IsDone)
                 {
+                    if (_currentJob != null && _currentJob.IsDone)
+                        DebugLogger.Logger.Trace("Job IsDone = True, Dequeueing Job");
+
                     if (JobQueue.TryDequeue(out _currentJob))
                     {
                         if (_currentJob.IsDone)
@@ -130,6 +144,9 @@ namespace ZSharp
                         }
                     }
                 }
+
+                if (_currentJob != null)
+                    DebugLogger.Logger.Trace("CurrentJob = \n{0}", _currentJob.ToString());
 
                 // Check for incoming messages
                 int btr = this._sp.BytesToRead;
@@ -227,12 +244,12 @@ namespace ZSharp
                             ZWaveMessage msg = _currentJob.Request;
                             if (msg != null)
                             {
+                                DebugLogger.Logger.Trace(string.Format("Sending Message:{0}", msg.ToString()));
                                 this._sp.Write(msg.Message, 0, msg.Message.Length);
                                 _currentJob.Start();
                                 _currentJob.Resend = false;
                                 _currentJob.AwaitACK = true;
-                                _currentJob.SendCount++;
-                                DebugLogger.Logger.Trace("Sent: " + Utils.ByteArrayToString(msg.Message));
+                                _currentJob.SendCount++;                                
                             }
                         }
                     }

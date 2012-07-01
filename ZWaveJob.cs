@@ -9,6 +9,7 @@ using System;
 using ZSharp.Nodes;
 using System.Collections.Generic;
 using System.Timers;
+using System.Collections.Concurrent;
 
 namespace ZSharp
 {
@@ -39,20 +40,19 @@ namespace ZSharp
             set { this._request = value; }
         }
 
-        private Queue<ZWaveMessage> _response = new Queue<ZWaveMessage>();
+        private ConcurrentQueue<ZWaveMessage> _response = new ConcurrentQueue<ZWaveMessage>();
         public ZWaveMessage GetResponse()
         {
-            lock (this._responseLock)
-            {
-                if (this._response.Count > 0) return this._response.Dequeue();
-                else return null;
-            }
+            ZWaveMessage result;
+            if (_response.TryDequeue(out result))
+                return result;
+            else return null;
         }
 
         public void AddResponse(ZWaveMessage message)
         {
             this.RemoveTimeout();
-            lock (this._responseLock) { this._response.Enqueue(message); }
+            this._response.Enqueue(message);
             this.FireResponseReceivedEvent();
         }
 
@@ -113,7 +113,6 @@ namespace ZSharp
             set { this._awaitResponse = value; }
         }
 
-        private Object _responseLock = new Object();
         public int SendCount = 0;
         
         public bool Resend = false;
@@ -131,6 +130,28 @@ namespace ZSharp
             this.JobStarted = true;
         }
 
-        public ZWaveJob() { }
+        public override string ToString()
+        {
+            return string.Format(@"
+===============================
+Zwave Job
+===============================
+AwaitACK:       {0}
+AwaitRespnse:   {1}
+IsDone:         {2}
+JobStarted:     {3}
+Resend:         {4}
+SendCount:      {5}
+Current RQ:     {6}
+Responses:      {7}",
+                this.AwaitACK,
+                this.AwaitResponse,
+                this.IsDone,
+                this.JobStarted,
+                this.Resend,
+                this.SendCount,
+                this.Request != null ? this.Request.Function_s : "N/A",
+                this._response.Count);
+        }
     }
 }

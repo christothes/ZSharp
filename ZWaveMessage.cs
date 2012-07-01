@@ -224,12 +224,12 @@ namespace ZSharp
 ===============================
 Zwave Message
 ===============================
-Command: {0}
-CommandClass: {1}
-Function: {2}
-Message: {3}
-MessageType: {4}
-NodeID: {5}
+Command:        {0}
+CommandClass:   {1}
+Function:       {2}
+Message:        {3}
+MessageType:    {4}
+NodeID:         {5}
 ==============================
 ",
  this.Command.ToString("X2"),

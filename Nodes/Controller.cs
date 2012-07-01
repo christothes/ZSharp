@@ -252,11 +252,12 @@ namespace ZSharp.Nodes
         }
 
         private void ResponseReceived(object sender, EventArgs e)
-        {
-            DebugLogger.Logger.Trace("");
+        {            
             ZWaveJob job = (ZWaveJob)sender;
             ZWaveMessage response = job.GetResponse();
             ZWaveMessage request = job.Request;
+
+            DebugLogger.Logger.Trace("\nREQUEST:{0}\n\nRESPONSE:{1}", request.ToString(), response.ToString());
 
             bool done = false;
 
