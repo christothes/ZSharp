@@ -28,15 +28,13 @@ namespace ZSharp.Nodes
         /// </summary>
         protected void FireBaseNodeInitializedEvent()
         {
-            if (this.BaseNodeInitializedEvent != null)
-                this.BaseNodeInitializedEvent(this, null);
+            Utils.SafeEventFire(this, null, BaseNodeInitializedEvent);
         }
 
         internal event EventHandler NodeInitializedEvent;
         internal void FireNodeInitializedEvent()
         {
-            if(this.NodeInitializedEvent != null)
-                this.NodeInitializedEvent(this, null);
+            Utils.SafeEventFire(this, null, NodeInitializedEvent);
         }
 
         /// <summary>

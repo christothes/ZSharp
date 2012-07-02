@@ -11,7 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{5790DF
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZSharp.Test", "ZSharp.Test\ZSharp.Test.csproj", "{FCC0138D-2F1A-4970-A218-674003DA98C2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZSharpCon", "ZSharpCon\ZSharpCon.csproj", "{59CFD036-3227-4479-995E-96E1CA2865E3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZSharp.Console", "ZSharpCon\ZSharp.Console.csproj", "{59CFD036-3227-4479-995E-96E1CA2865E3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
