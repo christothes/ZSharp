@@ -40,6 +40,9 @@ namespace ZSharp
 
         private ConcurrentQueue<ZWaveJob> _jobQueue = new ConcurrentQueue<ZWaveJob>();
 
+        /// <summary>
+        /// The current ZwaveJob. This is just held as the message on the top of the _jobQueue. The current job is only dequeued once it is complete.
+        /// </summary>
         private ZWaveJob CurrentJob
         {
             get
@@ -90,6 +93,10 @@ namespace ZSharp
             }
         }
 
+        /// <summary>
+        /// Handler when data is received on the port
+        /// </summary>
+        /// <param name="buf">buffer received on the port</param>
         void DataReceivedHandler(byte[] buf)
         {            
             var job = this.CurrentJob;
@@ -98,7 +105,7 @@ namespace ZSharp
             {
                 case ZWaveProtocol.SOF:
                     DebugLogger.Logger.Trace("Received: SOF");
-                    ProcessSOF(new ArraySegment<byte>(buf), job);
+                    ProcessMessage(new ArraySegment<byte>(buf), job);
                     break;
                 case ZWaveProtocol.CAN:
                     DebugLogger.Logger.Trace("Received: CAN");
@@ -112,7 +119,7 @@ namespace ZSharp
                     DebugLogger.Logger.Trace("Received: ACK");
                     HandleACKForCurrentJob();
                     if(buf.Length > 1 && buf[ZWaveProtocol.MessageBufferOffsets.ResponseType + 1] == ZWaveProtocol.SOF)
-                        ProcessSOF(new ArraySegment<byte>(buf, 1, buf.Length - 1), job);
+                        ProcessMessage(new ArraySegment<byte>(buf, 1, buf.Length - 1), job);
                     break;
                 default:
                     DebugLogger.Logger.Trace("Critical error. Out of frame flow.");
@@ -120,65 +127,75 @@ namespace ZSharp
             }
         }
 
-        private void ProcessSOF(ArraySegment<byte> bufSeg, ZWaveJob job)
+        /// <summary>
+        /// Message processing
+        /// </summary>
+        /// <param name="bufSeg">An ArraySegment for the buffer to be processed</param>
+        /// <param name="job">The ZwaveJob to be processed</param>
+        private void ProcessMessage(ArraySegment<byte> bufSeg, ZWaveJob job)
         {
             // Read the length byte
             byte len = bufSeg.Array[ZWaveProtocol.MessageBufferOffsets.MessageLength + bufSeg.Offset];
 
             // Read rest of the frame
-            byte[] message = Utils.ByteSubstring(bufSeg.Array, 
-                bufSeg.Offset, 
+            byte[] message = Utils.ByteSubstring(bufSeg.Array,
+                bufSeg.Offset,
                 bufSeg.Count);
             DebugLogger.Logger.Trace("Received: " + Utils.ByteArrayToString(message));
 
-            // Verify checksum
-            if (message[(message.Length - 1)] == CalculateChecksum(Utils.ByteSubstring(message, 0, (message.Length - 1))))
+            ZWaveMessage zMessage = null;
+            try
             {
+                zMessage = new ZWaveMessage(message);
                 //Checksum is correct
                 SendACKToPort();
-
-                ZWaveMessage zMessage = new ZWaveMessage(message);
-
-                if (job == null)
-                {
-                    // Incoming response?
-                    DebugLogger.Logger.Trace("*** Incoming response");
-                    this.FireUnsubscribedMessageEvent(zMessage);                    
-                }
-                else
-                {
-                    if (job.AwaitACK)
-                    {
-                        // We wanted an ACK instead. Resend...
-                        ResendCurrentJob(resendReason.ExpectingACK);
-                    }
-                    else
-                    {
-                        job.AddResponse(zMessage);
-                        this.FireUnsubscribedMessageEvent(zMessage);
-                    }
-                }
-                //Checksum is correct
-                //SendACKToPort();
+            }
+            catch (MessageChecksumInvalidException ex)
+            {
+                DebugLogger.Logger.Error("Message Checksum invalid. Sending NAK.\nMessage: {0}", Utils.ByteArrayToString(message));
+                SendNAKToPort();
+                return;
+            }
+            if (job == null)
+            {
+                // Incoming response?
+                DebugLogger.Logger.Trace("*** Incoming response");
+                this.FireUnsubscribedMessageEvent(zMessage);
             }
             else
             {
-                SendNAKToPort();
+                if (job.AwaitACK)
+                {
+                    // We wanted an ACK instead. Resend...
+                    ResendCurrentJob(resendReason.ExpectingACK);
+                }
+                else
+                {
+                    job.AddResponse(zMessage);
+                    this.FireUnsubscribedMessageEvent(zMessage);
+                }
             }
         }
 
+        //Send a NAK (Negative Acknowledgement) to the port
         private void SendNAKToPort()
         {
             DebugLogger.Logger.Trace("Sending: NAK");
             this._sp.Write(new byte[] { ZWaveProtocol.NAK }, 0, 1);            
         }
 
+        /// <summary>
+        /// Send an ACK to the port
+        /// </summary>
         private void SendACKToPort()
         {
             DebugLogger.Logger.Trace("Sending: ACK");
             this._sp.Write(new byte[] { ZWaveProtocol.ACK }, 0, 1);
         }
 
+        /// <summary>
+        /// Set appropriate job fields when an ACK is received
+        /// </summary>
         private void HandleACKForCurrentJob()
         {
             var job = this.CurrentJob;
@@ -192,6 +209,10 @@ namespace ZSharp
             }
         }
 
+        /// <summary>
+        /// Resends the CurrentJob to the port
+        /// </summary>
+        /// <param name="reason">The reason the job is to be resent. This affects which flags are set on the job object</param>
         private void ResendCurrentJob(resendReason reason)
         {            
             var job = this.CurrentJob;
@@ -213,6 +234,10 @@ namespace ZSharp
             SendJob(job);
         }
 
+        /// <summary>
+        /// Sends a job to the port. If the job Sendcount is >= 3 the job will be canceled
+        /// </summary>
+        /// <param name="job">ZwaveJob to be sent</param>
         private void SendJob(ZWaveJob job)
         {
             DebugLogger.Logger.Trace(string.Format("{0}", job.ToString()));
@@ -266,12 +291,22 @@ namespace ZSharp
             }
         }
 
+        /// <summary>
+        /// Event handler for job resend
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         void job_ResendRequired(object sender, EventArgs e)
         {
             var job = sender as ZWaveJob;
             SendJob(job);
         }
 
+        /// <summary>
+        /// Event handler when job IsDone is set
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         void job_JobFinished(object sender, EventArgs e)
         {           
             ProcessJobQueue();
@@ -321,6 +356,9 @@ namespace ZSharp
             }
 		}
 
+        /// <summary>
+        /// Close the port
+        /// </summary>
         public void Close()
         {
             this._sp.Close();
@@ -328,7 +366,7 @@ namespace ZSharp
         }
 		
 		/// <summary>
-		/// 
+		/// Enqueue a new job to be sent by the controller
 		/// </summary>
         public void EnqueueJob(ZWaveJob job)
         {
@@ -338,17 +376,7 @@ namespace ZSharp
                 //Process the new job
                 ProcessJobQueue();
             }
-        }
-
-		public static byte CalculateChecksum(byte[] message)
-		{
-			byte chksum = 0xff;
-			for(int i = 1; i < message.Length; i++)
-			{
-				chksum ^= (byte)message[i];
-			}
-			return chksum;
-		}
+        }		
 
         private enum resendReason
         {

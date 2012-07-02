@@ -5,6 +5,7 @@
  * Author: thomrand
  */
 
+using System;
 using System.Collections.Generic;
 
 namespace ZSharp
@@ -140,7 +141,7 @@ namespace ZSharp
                     message[index++] = this._transmissionOptions;               
 
                     // Calculate and insert the checksum
-                    message[index++] = ZWavePort.CalculateChecksum(message);
+                    message[index++] = CalculateChecksum(message);
 
                     return message;
                 }
@@ -213,9 +214,23 @@ namespace ZSharp
 
         public ZWaveMessage(byte[] message)
         {
+            if (message[(message.Length - 1)] != CalculateChecksum(Utils.ByteSubstring(message, 0, (message.Length - 1))))
+            {
+                throw new MessageChecksumInvalidException();
+            }
             this._message = message;
             this._raw = true;
             this.Parse(message);
+        }
+
+        private static byte CalculateChecksum(byte[] message)
+        {
+            byte chksum = 0xff;
+            for (int i = 1; i < message.Length; i++)
+            {
+                chksum ^= (byte)message[i];
+            }
+            return chksum;
         }
 
         public override string ToString()
@@ -240,4 +255,6 @@ NodeID:         {5}
  this.NodeId.ToString("X2"));
         }
 	}
+
+    public class MessageChecksumInvalidException : Exception {}
 }
