@@ -32,16 +32,26 @@ namespace ZSharp
         public event EventHandler UnsubscribedMessageEvent;
         public void FireUnsubscribedMessageEvent(ZWaveMessage message)
         {
-            if (this.UnsubscribedMessageEvent != null)
-                this.UnsubscribedMessageEvent(this, new UnsubscribedMessageEventArgs(message));
+            Utils.SafeEventFire(this, new UnsubscribedMessageEventArgs(message), UnsubscribedMessageEvent);
         }
         
         private SerialPort _sp;
-		private Thread _runner;
-        private Object _queueLock = new Object();
         private byte[] buff2 = new byte[1024];
 
-        private ConcurrentQueue<ZWaveJob> JobQueue = new ConcurrentQueue<ZWaveJob>();
+        private ConcurrentQueue<ZWaveJob> _jobQueue = new ConcurrentQueue<ZWaveJob>();
+
+        private ZWaveJob CurrentJob
+        {
+            get
+            {
+                ZWaveJob curJob = null;
+                if (_jobQueue.TryPeek(out curJob))
+                {
+                    return curJob;
+                }
+                else return null;
+            }
+        }
 
 		/// <summary>
 		/// Create and initialize a new communication port.
@@ -58,15 +68,213 @@ namespace ZSharp
 			this._sp.RtsEnable = true;
 			this._sp.NewLine = Environment.NewLine;
 			
-			this._runner = new Thread(new ThreadStart(Run));
+			//this._runner = new Thread(new ThreadStart(Run));
 		}
 
+        /// <summary>
+        /// Handles the event and dumps all bytes to be read to a buffer to be handled by DataReceivedHandler
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         void _sp_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             var sp = sender as SerialPort;
-            DebugLogger.Logger.Trace(string.Format("Event Type {0}, Bytes: {1}", e.EventType.ToString(), sp.BytesToRead));
+            var cnt = sp.BytesToRead;
+            DebugLogger.Logger.Trace(string.Format("Event Type {0}, Bytes: {1}", e.EventType.ToString(), cnt));
 
+            if (cnt > 0)
+            {
+                byte[] ba = new byte[cnt];
+                sp.Read(ba, 0, cnt);
+                DataReceivedHandler(ba);
+            }
+        }
 
+        void DataReceivedHandler(byte[] buf)
+        {            
+            var job = this.CurrentJob;
+
+            switch (buf[ZWaveProtocol.MessageBufferOffsets.ResponseType])
+            {
+                case ZWaveProtocol.SOF:
+                    DebugLogger.Logger.Trace("Received: SOF");
+                    ProcessSOF(new ArraySegment<byte>(buf), job);
+                    break;
+                case ZWaveProtocol.CAN:
+                    DebugLogger.Logger.Trace("Received: CAN");
+                    ResendCurrentJob(resendReason.ReceivedCAN);
+                    break;
+                case ZWaveProtocol.NAK:
+                    DebugLogger.Logger.Trace("Received: NAK");
+                    ResendCurrentJob(resendReason.ReceivedNAK);
+                    break;
+                case ZWaveProtocol.ACK:
+                    DebugLogger.Logger.Trace("Received: ACK");
+                    HandleACKForCurrentJob();
+                    if(buf.Length > 1 && buf[ZWaveProtocol.MessageBufferOffsets.ResponseType + 1] == ZWaveProtocol.SOF)
+                        ProcessSOF(new ArraySegment<byte>(buf, 1, buf.Length - 1), job);
+                    break;
+                default:
+                    DebugLogger.Logger.Trace("Critical error. Out of frame flow.");
+                    break;
+            }
+        }
+
+        private void ProcessSOF(ArraySegment<byte> bufSeg, ZWaveJob job)
+        {
+            // Read the length byte
+            byte len = bufSeg.Array[ZWaveProtocol.MessageBufferOffsets.MessageLength + bufSeg.Offset];
+
+            // Read rest of the frame
+            byte[] message = Utils.ByteSubstring(bufSeg.Array, 
+                bufSeg.Offset, 
+                bufSeg.Count);
+            DebugLogger.Logger.Trace("Received: " + Utils.ByteArrayToString(message));
+
+            // Verify checksum
+            if (message[(message.Length - 1)] == CalculateChecksum(Utils.ByteSubstring(message, 0, (message.Length - 1))))
+            {
+                //Checksum is correct
+                SendACKToPort();
+
+                ZWaveMessage zMessage = new ZWaveMessage(message);
+
+                if (job == null)
+                {
+                    // Incoming response?
+                    DebugLogger.Logger.Trace("*** Incoming response");
+                    this.FireUnsubscribedMessageEvent(zMessage);                    
+                }
+                else
+                {
+                    if (job.AwaitACK)
+                    {
+                        // We wanted an ACK instead. Resend...
+                        ResendCurrentJob(resendReason.ExpectingACK);
+                    }
+                    else
+                    {
+                        job.AddResponse(zMessage);
+                        this.FireUnsubscribedMessageEvent(zMessage);
+                    }
+                }
+                //Checksum is correct
+                //SendACKToPort();
+            }
+            else
+            {
+                SendNAKToPort();
+            }
+        }
+
+        private void SendNAKToPort()
+        {
+            DebugLogger.Logger.Trace("Sending: NAK");
+            this._sp.Write(new byte[] { ZWaveProtocol.NAK }, 0, 1);            
+        }
+
+        private void SendACKToPort()
+        {
+            DebugLogger.Logger.Trace("Sending: ACK");
+            this._sp.Write(new byte[] { ZWaveProtocol.ACK }, 0, 1);
+        }
+
+        private void HandleACKForCurrentJob()
+        {
+            var job = this.CurrentJob;
+            if (job != null)
+            {
+                if (job.AwaitACK && !job.AwaitResponse)
+                {
+                    job.AwaitResponse = true;
+                    job.AwaitACK = false;
+                }
+            }
+        }
+
+        private void ResendCurrentJob(resendReason reason)
+        {            
+            var job = this.CurrentJob;
+            DebugLogger.Logger.Trace(string.Format("{0}", job.ToString()));
+
+            switch (reason)
+            {
+                case resendReason.ExpectingACK:
+                    job.AwaitResponse = false;
+                    break;
+                case resendReason.ReceivedNAK:
+                case resendReason.ReceivedCAN:
+                    job.AwaitACK = false;
+                    job.JobStarted = false;
+                    break;
+                default:
+                    break;
+            }
+            SendJob(job);
+        }
+
+        private void SendJob(ZWaveJob job)
+        {
+            DebugLogger.Logger.Trace(string.Format("{0}", job.ToString()));
+            if (job.SendCount >= 3)
+            {
+                job.CancelJob();
+            }
+            else
+            {
+                ZWaveMessage msg = job.Request;
+                if (msg != null)
+                {
+                    DebugLogger.Logger.Trace(string.Format("Sending Message:{0}", msg.ToString()));
+                    job.Start();
+                    job.Resend = false;
+                    job.AwaitACK = true;
+                    job.SendCount++;
+                    this._sp.Write(msg.Message, 0, msg.Message.Length);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handles processing of the next job on the queue
+        /// </summary>
+        private void ProcessJobQueue()
+        {
+            var job = this.CurrentJob;
+            DebugLogger.Logger.Trace(string.Format("{0}", job.ToString()));
+            if (job == null || job.IsDone)
+            {
+                if (_jobQueue.TryDequeue(out job))
+                {
+                    DebugLogger.Logger.Trace(string.Format("Current Job null or Complete. Dequeueing."));
+                    job.JobFinished -= job_JobFinished;
+                    job.ResendRequired -= job_ResendRequired;
+                    job = this.CurrentJob;
+                    DebugLogger.Logger.Trace(string.Format("Current Job: {0}", job != null ? job.ToString() : "null"));                    
+                }
+                else
+                {
+                    DebugLogger.Logger.Error("Error DeQueuing finished CurrentJob");
+                }
+            }
+
+            if (job != null)
+            {
+                job.JobFinished += job_JobFinished;
+                job.ResendRequired += job_ResendRequired;
+                SendJob(job);
+            }
+        }
+
+        void job_ResendRequired(object sender, EventArgs e)
+        {
+            var job = sender as ZWaveJob;
+            SendJob(job);
+        }
+
+        void job_JobFinished(object sender, EventArgs e)
+        {           
+            ProcessJobQueue();
         }
 		
 		/// <summary>
@@ -98,7 +306,7 @@ namespace ZSharp
                 if (this._sp.IsOpen)
                 {
                     DebugLogger.Logger.Trace("Found ZWave controller at port: " + this._sp.PortName);
-                    this._runner.Start();
+                    //this._runner.Start();
                     return true;
                 }
                 else
@@ -120,151 +328,16 @@ namespace ZSharp
         }
 		
 		/// <summary>
-		///
-		/// </summary>
-        private void Run()
-        {
-            byte[] buf = new byte[1024];
-            ZWaveJob _currentJob = null;
-
-            while (this._sp.IsOpen)
-            {             
-
-                //We work on the current job until its done. Only dequeue the next job after that
-                if (_currentJob == null || _currentJob.IsDone)
-                {
-                    if (_currentJob != null && _currentJob.IsDone)
-                        DebugLogger.Logger.Trace("Job IsDone = True, Dequeueing Job");
-
-                    if (JobQueue.TryDequeue(out _currentJob))
-                    {
-                        if (_currentJob.IsDone)
-                        {
-                            continue;
-                        }
-                    }
-                }
-
-                if (_currentJob != null)
-                    DebugLogger.Logger.Trace("CurrentJob = \n{0}", _currentJob.ToString());
-
-                // Check for incoming messages
-                int btr = this._sp.BytesToRead;
-                if (btr > 0)
-                {
-                    // Read first byte
-                    this._sp.Read(buf, 0, 1);
-                    switch (buf[0])
-                    {
-                        case ZWaveProtocol.SOF:
-
-                            // Read the length byte
-                            this._sp.Read(buf, 1, 1);
-                            byte len = buf[1];
-
-                            // Read rest of the frame
-                            this._sp.Read(buf, 2, len);
-                            byte[] message = Utils.ByteSubstring(buf, 0, (len + 2));
-                            DebugLogger.Logger.Trace("Received: " + Utils.ByteArrayToString(message));
-
-                            // Verify checksum
-                            if (message[(message.Length - 1)] == CalculateChecksum(Utils.ByteSubstring(message, 0, (message.Length - 1))))
-                            {
-                                ZWaveMessage zMessage = new ZWaveMessage(message);
-
-                                if (_currentJob == null)
-                                {
-                                    // Incoming response?
-                                    this.FireUnsubscribedMessageEvent(zMessage);
-                                    DebugLogger.Logger.Trace("*** Incoming response");
-                                }
-                                else
-                                {
-                                    if (_currentJob.AwaitACK)
-                                    {
-                                        // We wanted an ACK instead. Resend...
-                                        _currentJob.AwaitACK = false;
-                                        _currentJob.AwaitResponse = false;
-                                        _currentJob.Resend = true;
-                                    }
-                                    else
-                                    {
-                                        _currentJob.AddResponse(zMessage);
-                                        this.FireUnsubscribedMessageEvent(zMessage);
-                                    }
-                                }
-
-                                // Send ACK - Checksum is correct
-                                this._sp.Write(new byte[] { ZWaveProtocol.ACK }, 0, 1);
-                                DebugLogger.Logger.Trace("Sent: ACK");
-                            }
-                            else
-                            {
-                                // Send NAK
-                                this._sp.Write(new byte[] { ZWaveProtocol.NAK }, 0, 1);
-                                DebugLogger.Logger.Trace("Sent: NAK");
-                            }
-
-                            break;
-                        case ZWaveProtocol.CAN:
-                            DebugLogger.Logger.Trace("Received: CAN");
-                            break;
-                        case ZWaveProtocol.NAK:
-                            DebugLogger.Logger.Trace("Received: NAK");
-                            _currentJob.AwaitACK = false;
-                            _currentJob.JobStarted = false;
-                            break;
-                        case ZWaveProtocol.ACK:
-                            DebugLogger.Logger.Trace("Received: ACK");
-                            if (_currentJob != null)
-                            {
-                                if (_currentJob.AwaitACK && !_currentJob.AwaitResponse)
-                                {
-                                    _currentJob.AwaitResponse = true;
-                                    _currentJob.AwaitACK = false;
-                                }
-                            }
-                            break;
-                        default:
-                            DebugLogger.Logger.Trace("Critical error. Out of frame flow.");
-                            break;
-                    }
-                }
-                else
-                {
-                    if (_currentJob != null)
-                    {
-                        if (_currentJob.SendCount >= 3)
-                        {
-                            _currentJob.CancelJob();
-                        }
-
-                        if ((!_currentJob.JobStarted && !_currentJob.IsDone) || _currentJob.Resend)
-                        {
-                            ZWaveMessage msg = _currentJob.Request;
-                            if (msg != null)
-                            {
-                                DebugLogger.Logger.Trace(string.Format("Sending Message:{0}", msg.ToString()));
-                                this._sp.Write(msg.Message, 0, msg.Message.Length);
-                                _currentJob.Start();
-                                _currentJob.Resend = false;
-                                _currentJob.AwaitACK = true;
-                                _currentJob.SendCount++;                                
-                            }
-                        }
-                    }
-                }
-
-                Thread.Sleep(100);
-            }
-        }
-		
-		/// <summary>
 		/// 
 		/// </summary>
         public void EnqueueJob(ZWaveJob job)
         {
-            this.JobQueue.Enqueue(job);
+            this._jobQueue.Enqueue(job);
+            if (job == CurrentJob)
+            {
+                //Process the new job
+                ProcessJobQueue();
+            }
         }
 
 		public static byte CalculateChecksum(byte[] message)
@@ -276,5 +349,12 @@ namespace ZSharp
 			}
 			return chksum;
 		}
+
+        private enum resendReason
+        {
+            ExpectingACK,
+            ReceivedNAK,
+            ReceivedCAN
+        }
 	}
 }

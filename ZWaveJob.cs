@@ -22,15 +22,29 @@ namespace ZSharp
         public event EventHandler ResponseReceived;
         private void FireResponseReceivedEvent()
         {
-            if (this.ResponseReceived != null)
-                this.ResponseReceived(this, null);
+            DebugLogger.Logger.Trace("");
+            Utils.SafeEventFire(this, null, ResponseReceived);
         }
 
         public event EventHandler JobCanceled;
         private void FireJobCanceledEvent()
         {
-            if (this.JobCanceled != null)
-                this.JobCanceled(this, null);
+            DebugLogger.Logger.Trace("");
+            Utils.SafeEventFire(this, null, JobCanceled);
+        }
+
+        public event EventHandler JobFinished;
+        private void FireJobFinishedEvent()
+        {
+            DebugLogger.Logger.Trace("");
+            Utils.SafeEventFire(this, null, JobFinished);
+        }
+
+        public event EventHandler ResendRequired;
+        private void FireResendRequiredEvent()
+        {
+            DebugLogger.Logger.Trace("");
+            Utils.SafeEventFire(this, null, ResendRequired);
         }
 
         private ZWaveMessage _request;
@@ -73,6 +87,7 @@ namespace ZSharp
             this._awaitACK = false;
             this._awaitResponse = false;
             this.Resend = true;
+            FireResendRequiredEvent();
         }
 
         private Timer _timeout;
@@ -122,6 +137,7 @@ namespace ZSharp
         {
             this.IsDone = true;
             this.RemoveTimeout();
+            this.FireJobFinishedEvent();
         }
 
         public bool JobStarted = false;

@@ -14,10 +14,12 @@ namespace ZSharpCon
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private static ZWave zw;
+        private static AutoResetEvent exitEvent = new AutoResetEvent(false);
 
         static void Main(string[] args)
         {
             DoInit();
+            exitEvent.WaitOne();
         }
 
         private static void DoInit()
@@ -25,7 +27,7 @@ namespace ZSharpCon
             zw = new ZWave();
             zw.ZWaveInitializedEvent += zw_ZWaveInitializedEvent;
             zw.ZWaveReadyEvent += zw_ZWaveReadyEvent;
-            zw.Initialize();            
+            zw.Initialize();
         }
 
         private static void RunLoop()
@@ -40,6 +42,7 @@ namespace ZSharpCon
                 {
                     case ConsoleKey.Escape:
                         zw.ShutdownGracefully();
+                        exitEvent.Set();
                         return;
                     case ConsoleKey.R:
                         Console.WriteLine("Reset Command");

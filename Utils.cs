@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ZSharp
@@ -14,7 +15,7 @@ namespace ZSharp
             byte[] buffer2 = new byte[length];
             for (int i = 0; i < length; i++)
             {
-                buffer2[i] = buffer[i];
+                buffer2[i] = buffer[i + startIndex];
             }
             return buffer2;
         }
@@ -67,6 +68,13 @@ namespace ZSharp
                 default:
                     return "Unknown";
             }
+        }
+
+        public static void SafeEventFire(object sender, EventArgs e, EventHandler evt)
+        {
+            var tmpEvt = Interlocked.CompareExchange(ref evt, null, null);
+            if (tmpEvt != null)
+                tmpEvt(sender, e);
         }
     }
 }

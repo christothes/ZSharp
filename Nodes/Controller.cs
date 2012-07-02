@@ -324,6 +324,7 @@ namespace ZSharp.Nodes
                     {
                         case ZWaveProtocol.Function.SERIAL_API_INIT_DATA:
                             // Extract the nodes from the received bitmask
+                            DebugLogger.Logger.Trace("SERIAL_API_INIT_DATA");
                             DebugLogger.Logger.Trace("Extracting nodes from bitmask");
                             this.ExtractNodeList(response.Message);
                             done = true;
@@ -339,7 +340,7 @@ namespace ZSharp.Nodes
                     {
                         case ZWaveProtocol.Function.GET_NODE_PROTOCOL_INFO:
                             // Got protocol info from node
-                            DebugLogger.Logger.Trace("Got node protocol info");
+                            DebugLogger.Logger.Trace("GET_NODE_PROTOCOL_INFO");
                             byte[] msg = response.Message;
                             bool sleeping = !((msg[4] & (0x01 << 7)) > 0x00);
                             this.CreateNode(request.NodeId, sleeping, msg[7], msg[8], msg[9]);
@@ -358,7 +359,7 @@ namespace ZSharp.Nodes
                             switch(response.CommandClass)
                             {
                                 case ZWaveProtocol.CommandClass.ADD_NODE_LEARN_READY:
-                                    DebugLogger.Logger.Trace("LEARN_READY");
+                                    DebugLogger.Logger.Trace("ADD_NODE_LEARN_READY");
                                     done = true;
                                     break;
                                 default:

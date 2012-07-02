@@ -222,6 +222,14 @@ namespace ZSharp
             }
         }
 
+        public static class MessageBufferOffsets{
+            public const int ResponseType = 0;
+            public const int MessageLength = 1;
+            public const int MessageStart = 2;
+        }
+        
+
+        //Message Response Type Headers
         public const byte SOF = 0x01;
         public const byte ACK = 0x06;
         public const byte NAK = 0x15;
