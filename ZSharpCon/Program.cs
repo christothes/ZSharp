@@ -50,6 +50,8 @@ namespace ZSharpCon
                         break;
                     case ConsoleKey.Insert:
                         Console.WriteLine("AddNewNodeStart Command");
+                        Console.WriteLine("Provide a name for this node");
+                        var nodeName = Console.ReadLine();
                         zw.Controller.AddNewNodeStart();
                         break;
                
@@ -63,27 +65,58 @@ namespace ZSharpCon
                         {
                             var node = nodeEntry.Value;
                             var sw = node as SwitchBinary;
-                            if (sw != null)
-                            {
-                                Console.WriteLine(string.Format("Switch in state: {0}", sw.State.ToString()));
-                                if (sw.State == 0xff)
-                                {
-                                    Console.WriteLine("And then there was darkness...");
-                                    sw.Off();
-                                }
-                                else
-                                {
-                                    Console.WriteLine("Let there be light!");
-                                    sw.On();
-                                }
-                            }
+                            ToggleSwitch(sw);
                         }
+                        break;
+
+                    case ConsoleKey.D2:
+
+                        if (zw.Controller.Nodes.ContainsKey(2))
+                            ToggleSwitch(zw.Controller.Nodes[2] as SwitchBinary);
+                        break;
+
+                    case ConsoleKey.D3:
+
+                        if (zw.Controller.Nodes.ContainsKey(3))
+                            ToggleSwitch(zw.Controller.Nodes[3] as SwitchBinary);
+                        break;
+
+                    case ConsoleKey.D4:
+
+                        if (zw.Controller.Nodes.ContainsKey(4))
+                            ToggleSwitch(zw.Controller.Nodes[4] as SwitchBinary);
+                        break;
+
+                    case ConsoleKey.D5:
+
+                        if (zw.Controller.Nodes.ContainsKey(5))
+                            ToggleSwitch(zw.Controller.Nodes[5] as SwitchBinary);
                         break;
                     default:
                         break;
                 }
             }
         }
+
+        private static byte ToggleSwitch(SwitchBinary sw)
+        {
+            if (sw != null)
+            {
+                Console.WriteLine(string.Format("Switch in state: {0}", sw.State.ToString()));
+                if (sw.State == 0xff)
+                {
+                    Console.WriteLine("And then there was darkness...");
+                    sw.Off();
+                }
+                else
+                {
+                    Console.WriteLine("Let there be light!");
+                    sw.On();
+                }
+            }
+            return sw.State;
+        }
+
         static void zw_ZWaveInitializedEvent(object sender, EventArgs e)
         {
             Logger.Trace("");
